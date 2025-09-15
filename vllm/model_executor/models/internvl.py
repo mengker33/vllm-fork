@@ -683,6 +683,12 @@ class InternVLChatModel(nn.Module, SupportsMultiModal, SupportsPP):
             prefix=maybe_prefix(prefix, "vision_model"),
         )
 
+        # Old version of internvl models set tie_word_embeddings in llm config while newer ver set
+        # this property outside of llm config. This is to ensure the property can be used correctly
+        # regardless of where it is set.
+        if hasattr(config, "tie_word_embeddings") and hasattr(config.text_config, "tie_word_embeddings"):
+            config.text_config.tie_word_embeddings &= config.tie_word_embeddings
+
         self.language_model = init_vllm_registered_model(
             vllm_config=vllm_config,
             hf_config=config.text_config,
