@@ -329,22 +329,30 @@ def run_smolvlm(questions: list[str], modality: str) -> ModelRequestData:
 
 # InternVL
 def run_internvl(questions: list[str], modality: str) -> ModelRequestData:
-    assert modality == "image"
-
-    model_name = "OpenGVLab/InternVL2-2B"
+    model_name = "OpenGVLab/InternVL3_5-2B"
 
     engine_args = EngineArgs(
         model=model_name,
         trust_remote_code=True,
-        max_model_len=4096,
+        max_model_len=8192,
         limit_mm_per_prompt={modality: 1},
     )
 
     tokenizer = AutoTokenizer.from_pretrained(model_name,
                                               trust_remote_code=True)
+
+    if modality == "image":
+        placeholder = "<image>"
+    elif modality == "video":
+        if "<|video_pad|>" in tokenizer.all_special_tokens:
+            placeholder = "<video>"
+        else:
+            msg = f"Modality {args.modality} is not supported for {model_name}"
+            raise ValueError(msg)
+
     messages = [[{
         'role': 'user',
-        'content': f"<image>\n{question}"
+        'content': f"{placeholder}\n{question}"
     }] for question in questions]
     prompts = tokenizer.apply_chat_template(messages,
                                             tokenize=False,
